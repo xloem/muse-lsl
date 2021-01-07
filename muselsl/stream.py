@@ -4,6 +4,7 @@ from functools import partial
 import pygatt
 import subprocess
 from sys import platform
+from . import backends
 from . import helper
 from .muse import Muse
 from .constants import MUSE_SCAN_TIMEOUT, AUTO_DISCONNECT_DELAY,  \
@@ -24,7 +25,9 @@ def list_muses(backend='auto', interface=None):
         print('Starting BlueMuse, see BlueMuse window for interactive list of devices.')
         subprocess.call('start bluemuse:', shell=True)
         return
-    else:
+    elif backend == 'bleak':
+        adapter = backends.BleakBackend()
+    elif backend == 'bgapi':
         adapter = pygatt.BGAPIBackend(serial_port=interface)
 
     adapter.start()
