@@ -22,7 +22,8 @@ class Muse():
                  backend='auto',
                  interface=None,
                  time_func=time,
-                 name=None):
+                 name=None,
+                 preset=21):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -50,6 +51,7 @@ class Muse():
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
         self.enable_ppg = not callback_ppg is None
+        self.preset = preset
 
         self.interface = interface
         self.time_func = time_func
@@ -209,6 +211,7 @@ class Muse():
         self.last_tm = 0
         self.last_tm_ppg = 0
         self._init_control()
+        self.select_preset(self.preset)
         self.resume()
 
     def resume(self):
@@ -244,7 +247,15 @@ class Muse():
             preset = str(preset)
         if preset[0] == 'p':
             preset = preset[1:]
-        self._write_cmd_str('p' + preset)
+
+        print("Using preset {}".format(preset))
+
+        if preset in ('20','21','22','23','31','32','50','51','52','60','61','63','AB','AD'):
+            self._write_cmd_str('p' + preset)
+        elif preset == '53':
+            raise Exception('Preset 53 has unidentified behavior', preset)
+        else:
+            raise Exception('Unknown preset %s', preset)
 
     def disconnect(self):
         """disconnect."""

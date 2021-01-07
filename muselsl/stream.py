@@ -123,6 +123,7 @@ def stream(
     acc_enabled=False,
     gyro_enabled=False,
     eeg_disabled=False,
+    preset=21,
     timeout=AUTO_DISCONNECT_DELAY,
 ):
     # If no data types are enabled, we warn the user and return immediately.
@@ -206,7 +207,7 @@ def stream(
         push_gyro = partial(push, outlet=gyro_outlet) if gyro_enabled else None
 
         muse = Muse(address=address, callback_eeg=push_eeg, callback_ppg=push_ppg, callback_acc=push_acc, callback_gyro=push_gyro,
-                    backend=backend, interface=interface, name=name)
+                    backend=backend, interface=interface, name=name, preset=preset)
 
         didConnect = muse.connect()
 
@@ -241,7 +242,7 @@ def stream(
         subprocess.call('start bluemuse://setting?key=gyroscope_enabled!value={}'.format('true' if gyro_enabled else 'false'), shell=True)
 
         muse = Muse(address=address, callback_eeg=None, callback_ppg=None, callback_acc=None, callback_gyro=None,
-                    backend=backend, interface=interface, name=name)
+                    backend=backend, interface=interface, name=name, preset=preset)
         muse.connect()
 
         if not address and not name:
