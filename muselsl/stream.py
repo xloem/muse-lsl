@@ -1,4 +1,4 @@
-from time import time, sleep
+from time import time
 from pylsl import StreamInfo, StreamOutlet
 from functools import partial
 import pygatt
@@ -162,7 +162,7 @@ def stream(address, backend='auto', interface=None, name=None, ppg_enabled=False
 
             while time() - muse.last_timestamp < AUTO_DISCONNECT_DELAY:
                 try:
-                    sleep(1)
+                    backends.sleep(1)
                 except KeyboardInterrupt:
                     muse.stop()
                     muse.disconnect()
