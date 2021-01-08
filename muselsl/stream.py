@@ -1,7 +1,7 @@
 import re
 import subprocess
 from sys import platform
-from time import time, sleep
+from time import time
 from functools import partial
 
 from pylsl import StreamInfo, StreamOutlet
@@ -227,7 +227,7 @@ def stream(
 
             while time() - muse.last_timestamp < timeout:
                 try:
-                    sleep(1)
+                    backends.sleep(1)
                 except KeyboardInterrupt:
                     muse.stop()
                     muse.disconnect()
