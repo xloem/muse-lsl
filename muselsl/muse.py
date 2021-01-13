@@ -4,6 +4,7 @@ import numpy as np
 from time import time, sleep
 from sys import platform
 import subprocess
+from . import backends
 from . import helper
 from .constants import *
 
@@ -22,7 +23,8 @@ class Muse():
                  backend='auto',
                  interface=None,
                  time_func=time,
-                 name=None):
+                 name=None,
+                 preset=21):
         """Initialize
 
         callback_eeg -- callback for eeg data, function(data, timestamps)
@@ -50,6 +52,7 @@ class Muse():
         self.enable_acc = not callback_acc is None
         self.enable_gyro = not callback_gyro is None
         self.enable_ppg = not callback_ppg is None
+        self.preset = preset
 
         self.interface = interface
         self.time_func = time_func
@@ -70,6 +73,8 @@ class Muse():
                 if self.backend == 'gatt':
                     self.interface = self.interface or 'hci0'
                     self.adapter = pygatt.GATTToolBackend(self.interface)
+                elif self.backend == 'bleak':
+                    self.adapter = backends.BleakBackend()
                 else:
                     self.adapter = pygatt.BGAPIBackend(
                         serial_port=self.interface)
@@ -209,6 +214,7 @@ class Muse():
         self.last_tm = 0
         self.last_tm_ppg = 0
         self._init_control()
+        self.select_preset(self.preset)
         self.resume()
 
     def resume(self):
@@ -238,16 +244,21 @@ class Muse():
 
         See details on https://goo.gl/FPN1ib
         For 2016 headband, possible choice are 'p20' and 'p21'.
-        Untested but possible values are 'p22' and 'p23'
+        Untested but possible values include 'p22','p23','p31','p32','p50','p51','p52','p53','p60','p61','p63','pAB','pAD'
         Default is 'p21'."""
-        if preset == 20:
-            self._write_cmd_str('p20')
-        elif preset == 22:
-            self._write_cmd_str('p22')
-        elif preset == 23:
-            self._write_cmd_str('p23')
+        if type(preset) is int:
+            preset = str(preset)
+        if preset[0] == 'p':
+            preset = preset[1:]
+
+        print("Using preset {}".format(preset))
+
+        if preset in ('20','21','22','23','31','32','50','51','52','60','61','63','AB','AD'):
+            self._write_cmd_str('p' + preset)
+        elif preset == '53':
+            raise Exception('Preset 53 has unidentified behavior', preset)
         else:
-            self._write_cmd_str('p21')
+            raise Exception('Unknown preset %s', preset)
 
     def disconnect(self):
         """disconnect."""
@@ -287,7 +298,7 @@ class Muse():
 
     def _init_sample(self):
         """initialize array to store the samples"""
-        self.timestamps = np.zeros(5)
+        self.timestamps = np.full(5, np.nan)
         self.data = np.zeros((5, 12))
 
     def _init_ppg_sample(self):
@@ -296,7 +307,7 @@ class Muse():
             Must be separate from the EEG packets since they occur with a different sampling rate. Ideally the counters
             would always match, but this is not guaranteed
         """
-        self.timestamps_ppg = np.zeros(3)
+        self.timestamps_ppg = np.full(3, np.nan)
         self.data_ppg = np.zeros((3, 6))
 
     def _init_timestamp_correction(self):
@@ -366,7 +377,7 @@ class Muse():
             # update timestamp correction
             # We received the first packet as soon as the last timestamp got
             # sampled
-            self._update_timestamp_correction(idxs[-1], np.min(
+            self._update_timestamp_correction(idxs[-1], np.nanmin(
                 self.timestamps))
 
             # timestamps are extrapolated backwards based on sampling rate

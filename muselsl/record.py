@@ -5,8 +5,9 @@ from typing import Union, List
 from pathlib import Path
 from pylsl import StreamInlet, resolve_byprop
 from sklearn.linear_model import LinearRegression
-from time import time, sleep, strftime, gmtime
+from time import time, strftime, gmtime
 from .stream import find_muse
+from . import backends
 from .muse import Muse
 from .constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LSL_ACC_CHUNK, LSL_GYRO_CHUNK
 
@@ -176,7 +177,7 @@ def record_direct(duration,
         ))
 
     if not address:
-        found_muse = find_muse(name)
+        found_muse = find_muse(name, backend)
         if not found_muse:
             print('Muse could not be found')
             return
@@ -197,7 +198,7 @@ def record_direct(duration,
         eeg_samples.append(new_samples)
         timestamps.append(new_timestamps)
 
-    muse = Muse(address, save_eeg)
+    muse = Muse(address, save_eeg, backend=backend)
     muse.connect()
     muse.start()
 
@@ -206,7 +207,7 @@ def record_direct(duration,
 
     while (time() - t_init) < duration:
         try:
-            sleep(1)
+            backends.sleep(1)
         except KeyboardInterrupt:
             break
 
